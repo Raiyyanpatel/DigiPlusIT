@@ -132,11 +132,28 @@ function PriorityBadge({ priority }: { priority: string }) {
 function IncidentDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [incident, setIncident] = useState<any>(null);
+  const [loadingIncident, setLoadingIncident] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<any>(null);
   const [chatMessage, setChatMessage] = useState('');
   const [chatHistory, setChatHistory] = useState<{role: 'user' | 'ai', content: string}[]>([]);
   const [sendingChat, setSendingChat] = useState(false);
+
+  useEffect(() => {
+    const fetchIncident = async () => {
+      try {
+        const response = await api.get(`incidents/${id}`);
+        setIncident(response.data);
+      } catch (err) {
+        console.error('Failed to fetch incident', err);
+        setIncident({ title: 'Unknown Incident', description: 'Could not load incident details.', priority: 'P3', status: 'OPEN', created_at: new Date().toISOString() });
+      } finally {
+        setLoadingIncident(false);
+      }
+    };
+    fetchIncident();
+  }, [id]);
 
   const runAnalysis = async () => {
     setAnalyzing(true);
@@ -203,13 +220,22 @@ function IncidentDetail() {
                 <span className="px-3 py-1 bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 text-sm font-medium rounded-lg font-mono" title={id}>
                   ID: {id?.substring(0, 8)}
                 </span>
-                <PriorityBadge priority="P2" />
+                <PriorityBadge priority={incident?.priority || 'UNASSIGNED'} />
               </div>
             </div>
             
             <div className="relative z-10">
-              <h1 className="text-3xl font-bold text-neutral-900 dark:text-white leading-tight">Cannot connect to VPN</h1>
-              <p className="text-neutral-600 dark:text-neutral-400 mt-4 text-lg leading-relaxed">User reports they get an "Authentication Failed" error every time they try to connect to the global VPN portal since this morning.</p>
+              {loadingIncident ? (
+                <div className="animate-pulse space-y-3">
+                  <div className="h-8 bg-neutral-200 rounded w-2/3"></div>
+                  <div className="h-5 bg-neutral-200 rounded w-full"></div>
+                </div>
+              ) : (
+                <>
+                  <h1 className="text-3xl font-bold text-neutral-900 dark:text-white leading-tight">{incident?.title || 'Untitled Incident'}</h1>
+                  <p className="text-neutral-600 dark:text-neutral-400 mt-4 text-lg leading-relaxed">{incident?.description || 'No description provided.'}</p>
+                </>
+              )}
             </div>
             
             <div className="mt-10 pt-8 border-t border-neutral-100 dark:border-neutral-800 flex gap-4 relative z-10">
@@ -256,13 +282,33 @@ function IncidentDetail() {
                 {analysis.external_actions_taken?.length > 0 && (
                   <div>
                     <h4 className="font-semibold text-sm text-indigo-800 uppercase tracking-wider mb-2">Actions Executed</h4>
-                    <div className="flex flex-wrap gap-2">
-                      {analysis.external_actions_taken.map((action: string, i: number) => (
-                        <div key={i} className="px-4 py-2 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-lg text-sm flex items-center gap-2 border border-indigo-200 dark:border-indigo-800 shadow-sm">
-                          <ExternalLink className="w-4 h-4" />
-                          {action}
-                        </div>
-                      ))}
+                    <div className="flex flex-wrap gap-3">
+                      {analysis.external_actions_taken.map((action: string, i: number) => {
+                        // Parse the action string to extract tool name and status
+                        let toolName = 'unknown';
+                        let status = 'executed';
+                        try {
+                          const parsed = typeof action === 'string' ? JSON.parse(action.replace(/'/g, '"')) : action;
+                          toolName = parsed.tool || 'unknown';
+                          status = parsed.result?.status || 'executed';
+                        } catch {
+                          // Try simple regex extraction
+                          const toolMatch = action.match(/'tool':\s*'(\w+)'/);
+                          if (toolMatch) toolName = toolMatch[1];
+                        }
+                        const icons: Record<string, string> = { asana: '📋', github: '🐙', slack: '💬' };
+                        const labels: Record<string, string> = { asana: 'Asana Task Created', github: 'GitHub Issue Created', slack: 'Slack Alert Sent' };
+                        return (
+                          <div key={i} className={cn(
+                            "px-4 py-2.5 rounded-lg text-sm flex items-center gap-2 border shadow-sm",
+                            status === 'success' ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-indigo-100 text-indigo-700 border-indigo-200"
+                          )}>
+                            <span className="text-base">{icons[toolName] || '⚡'}</span>
+                            <span className="font-medium">{labels[toolName] || `${toolName} action`}</span>
+                            {status === 'success' && <CheckCircle2 className="w-4 h-4 text-emerald-500" />}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -278,15 +324,15 @@ function IncidentDetail() {
             <div className="space-y-4 text-sm">
               <div className="flex justify-between items-center">
                 <span className="text-neutral-500">Status</span>
-                <span className="font-medium text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-100">Open</span>
+                <span className="font-medium text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-100">{incident?.status || 'Open'}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-neutral-500">Category</span>
-                <span className="font-medium">Network / VPN</span>
+                <span className="text-neutral-500">Priority</span>
+                <PriorityBadge priority={incident?.priority || 'UNASSIGNED'} />
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-neutral-500">Created</span>
-                <span className="font-medium">Just now</span>
+                <span className="font-medium">{incident?.created_at ? format(new Date(incident.created_at), 'MMM d, HH:mm') : 'Just now'}</span>
               </div>
             </div>
           </div>
