@@ -40,23 +40,29 @@ async def action_agent(state: IncidentState) -> IncidentState:
         content = response.content
         if isinstance(content, list):
             content = content[0].get("text", "")
+        print(f"[ACTION AGENT] Raw LLM response: {content}")
         result = json.loads(content)
         
         actions = result.get("actions_to_take", [])
+        print(f"[ACTION AGENT] Actions to take: {len(actions)} actions parsed")
         
         for action in actions:
             tool_name = action.get("tool")
             args = action.get("args", {})
+            print(f"[ACTION AGENT] Executing tool: {tool_name} with args: {args}")
             
             if tool_name == "asana":
                 res = await create_asana_task(name=args.get("name", "Task"), notes=args.get("notes", ""))
                 executed_actions.append({"tool": "asana", "result": res})
+                print(f"[ACTION AGENT] Asana result: {res}")
             elif tool_name == "github":
                 res = await create_github_issue(title=args.get("title", "Issue"), body=args.get("body", ""))
                 executed_actions.append({"tool": "github", "result": res})
+                print(f"[ACTION AGENT] GitHub result: {res}")
             elif tool_name == "slack":
                 res = await send_slack_message(message=args.get("message", "Alert"))
                 executed_actions.append({"tool": "slack", "result": res})
+                print(f"[ACTION AGENT] Slack result: {res}")
                 
     except Exception as e:
         print(f"Error in Action Agent: {e}")
