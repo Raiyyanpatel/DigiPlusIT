@@ -42,26 +42,13 @@ This single command spins up:
 - **React/Vite Frontend** (Port 3000)
 - **Prometheus** (Port 9090)
 
-### 4. Database Setup & Seeding
-Once the containers are running, you must apply the database schema and seed the initial RAG knowledge base.
-```bash
-# 1. Run migrations
-docker compose exec backend alembic upgrade head
-
-# 2. Seed knowledge base and default users
-docker compose exec backend python scripts/seed_database.py
-
-# 3. Ingest historical incidents (for RAG)
-docker compose exec backend python scripts/ingest_dataset.py
-```
-
-### 5. Usage
+### 4. Usage
 - **Frontend Dashboard**: Open `http://localhost:3000` in your browser.
 - **API Docs**: Open `http://localhost:8000/docs` to interact with the FastAPI Swagger UI.
 
 ---
 
 ## 👥 Default Accounts
-After running the seed script, the following local accounts are created:
+When you run `docker compose up`, the backend will automatically run database migrations and seed the initial RAG knowledge base. The following local accounts are created:
 - **Admin**: `admin@resolveai.internal` / `admin123`
 - **Engineer**: `engineer@resolveai.internal` / `engineer123`
