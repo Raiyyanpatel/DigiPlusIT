@@ -27,9 +27,7 @@ bcrypt==4.2.1
 openai
 langgraph
 langchain-core
-langchain-google-genai
-google-generativeai
-
+langchain-openai
 # HTTP clients
 httpx==0.28.1
 aiohttp==3.11.11

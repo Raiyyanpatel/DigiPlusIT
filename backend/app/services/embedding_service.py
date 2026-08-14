@@ -1,11 +1,11 @@
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 
 from app.config import settings
 
-# Initialize the Gemini embeddings client
-embeddings = GoogleGenerativeAIEmbeddings(
-    model="models/gemini-embedding-2",
-    google_api_key=settings.GEMINI_API_KEY
+# Initialize the OpenAI embeddings client
+embeddings = OpenAIEmbeddings(
+    model="text-embedding-3-large",
+    openai_api_key=settings.OPENAI_API_KEY
 )
 
 async def get_embedding(text: str) -> list[float]:

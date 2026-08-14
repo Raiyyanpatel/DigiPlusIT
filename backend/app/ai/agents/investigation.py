@@ -1,7 +1,7 @@
 import json
 
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
 
 from app.ai.prompts.system_prompts import INVESTIGATION_PROMPT
 from app.ai.state import IncidentState
@@ -11,9 +11,9 @@ from app.config import settings
 async def investigation_agent(state: IncidentState) -> IncidentState:
     """Analyze the incident and RAG context to determine root cause and actions."""
     
-    llm = ChatGoogleGenerativeAI(
-        api_key=settings.GEMINI_API_KEY, 
-        model="gemini-flash-lite-latest",
+    llm = ChatOpenAI(
+        api_key=settings.OPENAI_API_KEY, 
+        model="gpt-4o-mini",
         temperature=0
     ).bind(
         response_format={"type": "json_object"}

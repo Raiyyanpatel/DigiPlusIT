@@ -72,7 +72,7 @@ async def copilot_chat(
     current_user: User = Depends(get_current_user)
 ):
     from langchain_core.messages import HumanMessage, SystemMessage
-    from langchain_google_genai import ChatGoogleGenerativeAI
+    from langchain_openai import ChatOpenAI
 
     from app.config import settings
     
@@ -80,9 +80,9 @@ async def copilot_chat(
     if not incident:
         raise HTTPException(status_code=404, detail="Incident not found")
         
-    llm = ChatGoogleGenerativeAI(
-        api_key=settings.GEMINI_API_KEY, 
-        model="gemini-flash-lite-latest"
+    llm = ChatOpenAI(
+        api_key=settings.OPENAI_API_KEY, 
+        model="gpt-4o-mini"
     )
     
     sys_msg = SystemMessage(content=f"You are the ResolveAI Copilot. Help the engineer resolve this incident: {incident.title}. Description: {incident.description}.\n\nIMPORTANT: Do NOT use markdown formatting (such as *, #, or `). Output clean, readable plain text only, separated by newlines.")

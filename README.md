@@ -1,6 +1,6 @@
 # ResolveAI: Autonomous IT Support Platform
 
-ResolveAI is a cutting-edge, AI-driven IT Service Management (ITSM) platform designed to automatically triage, investigate, and resolve support tickets. Leveraging the power of LangGraph and Gemini, ResolveAI acts as an autonomous agent that can connect to your infrastructure, diagnose issues, and interact with third-party tools like Asana and GitHub.
+ResolveAI is a cutting-edge, AI-driven IT Service Management (ITSM) platform designed to automatically triage, investigate, and resolve support tickets. Leveraging the power of LangGraph and OpenAI's GPT-4o-mini, ResolveAI acts as an autonomous agent that can connect to your infrastructure, diagnose issues, and interact with third-party tools like Asana and GitHub.
 
 ---
 
@@ -55,7 +55,7 @@ graph TD
 ### 3. Action Agent (The Executor)
 - **Role**: Connects the AI's decisions to the physical world via side effects.
 - **Cognitive Process**: Evaluates the remediation plan drafted by the Investigation Agent and selects the appropriate external API tools.
-- **Tool Access**: Full write access via strictly typed function calling (Gemini Flash Lite native function calling).
+- **Tool Access**: Full write access via strictly typed function calling (OpenAI native function calling).
 - **Integrations**:
   - **GitHub API**: Automatically creates bug reports or engineering escalation tickets, carrying over all diagnostic logs.
   - **Asana API**: Creates task items in specific IT project boards and assigns them to on-call technicians.
@@ -90,7 +90,7 @@ graph TD
 - Python 3.12
 - FastAPI
 - LangGraph (Agentic Orchestration)
-- Langchain Google GenAI
+- Langchain OpenAI
 - SQLAlchemy (ORM)
 - Pydantic (Data Validation)
 
@@ -101,7 +101,7 @@ graph TD
 - Prometheus & Grafana (Monitoring)
 
 **Integrations**
-- Google Gemini (`gemini-flash-lite-latest`)
+- OpenAI GPT-4o-mini (`gpt-4o-mini`)
 - Asana API
 - GitHub API
 - Slack Webhooks
@@ -112,7 +112,7 @@ graph TD
 
 ### Prerequisites
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running.
-- A Google AI Studio API Key (for Gemini).
+- An OpenAI API Key (get one at [platform.openai.com](https://platform.openai.com/api-keys)).
 - (Optional) Asana Personal Access Token and GitHub Fine-grained Token if you want the agent to create real tickets.
 
 ### 1. Environment Configuration
@@ -133,10 +133,10 @@ DATABASE_URL=postgresql://resolveai:resolveai_secret@postgres:5432/resolveai
 REDIS_URL=redis://redis:6379/0
 
 # ==========================================
-# AI Model Configuration
+# AI Model Configuration (OpenAI)
 # ==========================================
-# We use the lite model for high speed and generous free-tier limits
-GOOGLE_API_KEY=your_google_gemini_api_key_here
+# We use gpt-4o-mini for high speed and cost efficiency
+OPENAI_API_KEY=your_openai_api_key_here
 
 # ==========================================
 # External Integrations
@@ -194,8 +194,8 @@ Because Vite runs inside a Docker container, sometimes local file changes aren't
 docker compose up -d --build frontend
 ```
 
-**Quota Exceeded Errors from Gemini?**
-Ensure your `GOOGLE_API_KEY` in `.env` is valid and that you are using the `gemini-flash-lite-latest` model. Standard `gemini-1.5-pro` models have very strict Requests-Per-Minute (RPM) limits on the free tier, which LangGraph's recursive loops can hit quickly.
+**Rate Limit or Auth Errors from OpenAI?**
+Ensure your `OPENAI_API_KEY` in `.env` is valid. The platform uses `gpt-4o-mini` which has generous rate limits, but if you are on a free-tier OpenAI account you may need to add billing. Check your usage at [platform.openai.com/usage](https://platform.openai.com/usage).
 
 **Integrations Failing?**
 Double-check your `ASANA_PROJECT_ID` and ensure your `GITHUB_TOKEN` has `issues:write` permissions. The tools are hardcoded to read from the environment variables to prevent AI hallucinations.

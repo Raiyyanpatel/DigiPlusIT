@@ -18,8 +18,8 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 480
 
-    # Gemini
-    GEMINI_API_KEY: str = ""
+    # OpenAI
+    OPENAI_API_KEY: str = ""
 
     # Asana
     ASANA_ACCESS_TOKEN: str = ""
