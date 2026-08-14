@@ -6,7 +6,7 @@ import { cn } from './lib/utils';
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:8000',
+  baseURL: 'http://localhost:8000/api/v1/',
   headers: {
     'Authorization': 'Bearer placeholder-token'
   }
@@ -17,10 +17,11 @@ function PriorityBadge({ priority }: { priority: string }) {
     'P1': 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200',
     'P2': 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200',
     'P3': 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200',
+    'UNASSIGNED': 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400 border-neutral-200 dark:border-neutral-700',
   };
   return (
-    <span className={cn("px-2.5 py-0.5 rounded-full text-xs font-semibold border", styles[priority] || styles['P3'])}>
-      {priority}
+    <span className={cn("px-2.5 py-0.5 rounded-full text-xs font-semibold border", styles[priority] || styles['UNASSIGNED'])}>
+      {priority || 'UNASSIGNED'}
     </span>
   );
 }
@@ -33,7 +34,7 @@ export function IncidentList() {
   useEffect(() => {
     const fetchIncidents = async () => {
       try {
-        const response = await api.get('/incidents');
+        const response = await api.get('incidents');
         setIncidents(response.data);
       } catch (err) {
         console.error("Failed to fetch incidents", err);
@@ -112,7 +113,7 @@ export function IncidentList() {
               ) : (
                 filteredIncidents.map((incident) => (
                   <tr key={incident.id} className="hover:bg-neutral-50/50 dark:hover:bg-neutral-800/30 transition-colors group">
-                    <td className="px-6 py-4 text-sm font-medium text-neutral-500">{incident.id}</td>
+                    <td className="px-6 py-4 text-sm font-medium text-neutral-500" title={incident.id}>{incident.id.substring(0, 8)}</td>
                     <td className="px-6 py-4">
                       <div className="font-medium text-neutral-900 dark:text-neutral-100">{incident.title}</div>
                       <div className="text-xs text-neutral-500 mt-1 line-clamp-1">{incident.category || 'General'}</div>

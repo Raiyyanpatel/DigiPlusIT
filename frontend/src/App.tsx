@@ -7,9 +7,10 @@ import axios from 'axios';
 import { CreateIncident } from './CreateIncident';
 import { Layout } from './Layout';
 import { IncidentList } from './IncidentList';
+import { Settings } from './Settings';
 
 const api = axios.create({
-  baseURL: 'http://localhost:8000',
+  baseURL: 'http://localhost:8000/api/v1/',
   // Hardcoded auth for MVP demo
   headers: {
     'Authorization': 'Bearer placeholder-token'
@@ -32,7 +33,7 @@ function Dashboard() {
     // For this MVP, let's fetch from our seeded backend
     const fetchIncidents = async () => {
       try {
-        const response = await api.get('/incidents');
+        const response = await api.get('incidents');
         setIncidents(response.data);
       } catch (err) {
         console.error("Failed to fetch incidents", err);
@@ -119,10 +120,11 @@ function PriorityBadge({ priority }: { priority: string }) {
     'P1': 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200',
     'P2': 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200',
     'P3': 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200',
+    'UNASSIGNED': 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400 border-neutral-200 dark:border-neutral-700',
   };
   return (
-    <span className={cn("px-2.5 py-0.5 rounded-full text-xs font-semibold border", styles[priority] || styles['P3'])}>
-      {priority}
+    <span className={cn("px-2.5 py-0.5 rounded-full text-xs font-semibold border", styles[priority] || styles['UNASSIGNED'])}>
+      {priority || 'UNASSIGNED'}
     </span>
   );
 }
@@ -140,7 +142,7 @@ function IncidentDetail() {
     setAnalyzing(true);
     try {
       await new Promise(r => setTimeout(r, 1500));
-      const response = await api.post(`/ai/${id}/analyze`);
+      const response = await api.post(`ai/${id}/analyze`);
       setAnalysis(response.data);
     } catch (err) {
       console.error(err);
@@ -171,7 +173,7 @@ function IncidentDetail() {
     setSendingChat(true);
     
     try {
-      const response = await api.post(`/ai/${id}/copilot`, { message: newMsg });
+      const response = await api.post(`ai/${id}/copilot`, { message: newMsg });
       setChatHistory(prev => [...prev, { role: 'ai', content: response.data.response }]);
     } catch (err) {
       console.error(err);
@@ -191,29 +193,35 @@ function IncidentDetail() {
       </button>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-7xl mx-auto animate-slide-up-fade">
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white dark:bg-neutral-900 rounded-2xl p-8 border border-neutral-200 shadow-sm relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-8 opacity-5">
-              <Shield className="w-32 h-32" />
+        <div className="lg:col-span-2 space-y-8">
+          <div className="bg-white dark:bg-neutral-900 rounded-3xl p-10 border border-neutral-200 dark:border-neutral-800 shadow-xl shadow-neutral-200/40 dark:shadow-none relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
+              <Shield className="w-48 h-48 -mr-10 -mt-10" />
             </div>
-            <div className="flex justify-between items-start relative z-10">
-              <div>
-                <h1 className="text-2xl font-bold">{id}: Cannot connect to VPN</h1>
-                <p className="text-neutral-500 mt-2 text-lg">User reports they get an "Authentication Failed" error every time they try to connect to the global VPN portal since this morning.</p>
+            <div className="flex justify-between items-start relative z-10 mb-6">
+              <div className="flex items-center gap-3">
+                <span className="px-3 py-1 bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 text-sm font-medium rounded-lg font-mono" title={id}>
+                  ID: {id?.substring(0, 8)}
+                </span>
+                <PriorityBadge priority="P2" />
               </div>
-              <PriorityBadge priority="P2" />
             </div>
             
-            <div className="mt-8 pt-8 border-t border-neutral-100 flex gap-4 relative z-10">
+            <div className="relative z-10">
+              <h1 className="text-3xl font-bold text-neutral-900 dark:text-white leading-tight">Cannot connect to VPN</h1>
+              <p className="text-neutral-600 dark:text-neutral-400 mt-4 text-lg leading-relaxed">User reports they get an "Authentication Failed" error every time they try to connect to the global VPN portal since this morning.</p>
+            </div>
+            
+            <div className="mt-10 pt-8 border-t border-neutral-100 dark:border-neutral-800 flex gap-4 relative z-10">
               <button 
                 onClick={runAnalysis}
                 disabled={analyzing || analysis}
                 className={cn(
-                  "px-6 py-3 rounded-xl font-medium text-white flex items-center gap-2 transition-all",
-                  analyzing ? "bg-primary/70 animate-pulse" : analysis ? "bg-emerald-500" : "bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25 hover:shadow-primary/40"
+                  "px-8 py-4 rounded-xl font-medium text-white flex items-center justify-center gap-3 transition-all w-full sm:w-auto text-lg",
+                  analyzing ? "bg-primary/70 animate-pulse" : analysis ? "bg-emerald-500 shadow-lg shadow-emerald-500/25" : "bg-primary hover:bg-primary/90 shadow-xl shadow-primary/25 hover:shadow-primary/40"
                 )}
               >
-                <BrainCircuit className="w-5 h-5" />
+                <BrainCircuit className="w-6 h-6" />
                 {analyzing ? 'AI Agent Analyzing...' : analysis ? 'Analysis Complete' : 'Run AI Investigation'}
               </button>
             </div>
@@ -285,39 +293,40 @@ function IncidentDetail() {
 
           {/* Activity Timeline */}
           <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 border border-neutral-200 shadow-sm">
-            <h3 className="font-semibold mb-4 flex items-center gap-2">
+            <h3 className="font-semibold mb-6 flex items-center gap-2">
               <Activity className="w-5 h-5 text-primary" /> Activity Timeline
             </h3>
-            <div className="space-y-6 relative before:absolute before:inset-0 before:ml-2.5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-neutral-200 before:to-transparent">
-               
-               <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                 <div className="flex items-center justify-center w-6 h-6 rounded-full border border-white bg-primary text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 ml-[1px]">
-                    <Clock className="w-3 h-3" />
-                 </div>
-                 <div className="w-[calc(100%-3rem)] md:w-[calc(50%-2rem)] p-4 rounded-xl border border-neutral-200 bg-neutral-50 shadow-sm">
-                    <div className="flex justify-between items-center mb-1">
-                      <div className="font-medium text-sm">Incident Created</div>
-                      <time className="text-xs text-neutral-500">10:00 AM</time>
-                    </div>
-                    <div className="text-xs text-neutral-500">User reported the issue.</div>
-                 </div>
-               </div>
-               
-               {analysis && (
-                 <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active animate-slide-up-fade">
-                   <div className="flex items-center justify-center w-6 h-6 rounded-full border border-white bg-emerald-500 text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10 ml-[1px]">
-                      <BrainCircuit className="w-3 h-3" />
-                   </div>
-                   <div className="w-[calc(100%-3rem)] md:w-[calc(50%-2rem)] p-4 rounded-xl border border-neutral-200 bg-emerald-50 shadow-sm">
-                      <div className="flex justify-between items-center mb-1">
-                        <div className="font-medium text-sm text-emerald-800">AI Investigation</div>
-                        <time className="text-xs text-emerald-600">10:02 AM</time>
-                      </div>
-                      <div className="text-xs text-emerald-700">Root cause determined and actions logged.</div>
-                   </div>
-                 </div>
-               )}
+            
+            <div className="relative border-l-2 border-neutral-100 dark:border-neutral-800 ml-3 space-y-8 pb-4">
+              {/* Item 1 */}
+              <div className="relative pl-6">
+                <div className="absolute w-6 h-6 bg-primary rounded-full -left-[13px] top-0 flex items-center justify-center border-4 border-white dark:border-neutral-900">
+                  <Clock className="w-3 h-3 text-white" />
+                </div>
+                <div className="bg-neutral-50 dark:bg-neutral-950 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 -mt-1 shadow-sm">
+                  <div className="flex justify-between items-center mb-1">
+                    <div className="font-medium text-sm text-neutral-900 dark:text-neutral-100">Incident Created</div>
+                    <time className="text-xs text-neutral-500">10:00 AM</time>
+                  </div>
+                  <div className="text-xs text-neutral-500">User reported the issue.</div>
+                </div>
+              </div>
 
+              {/* Item 2 (Analysis) */}
+              {analysis && (
+                <div className="relative pl-6 animate-slide-up-fade">
+                  <div className="absolute w-6 h-6 bg-emerald-500 rounded-full -left-[13px] top-0 flex items-center justify-center border-4 border-white dark:border-neutral-900">
+                    <BrainCircuit className="w-3 h-3 text-white" />
+                  </div>
+                  <div className="bg-emerald-50 dark:bg-emerald-950/20 p-4 rounded-xl border border-emerald-100 dark:border-emerald-900/30 -mt-1 shadow-sm">
+                    <div className="flex justify-between items-center mb-1">
+                      <div className="font-medium text-sm text-emerald-800 dark:text-emerald-400">AI Investigation</div>
+                      <time className="text-xs text-emerald-600 dark:text-emerald-500">10:02 AM</time>
+                    </div>
+                    <div className="text-xs text-emerald-700 dark:text-emerald-500/80">Root cause determined and actions logged.</div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -389,6 +398,7 @@ function App() {
           <Route path="/incidents" element={<IncidentList />} />
           <Route path="/new" element={<CreateIncident />} />
           <Route path="/incident/:id" element={<IncidentDetail />} />
+          <Route path="/settings" element={<Settings />} />
         </Routes>
       </Layout>
     </Router>

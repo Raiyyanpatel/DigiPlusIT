@@ -1,6 +1,7 @@
 
 from pydantic import BaseModel
 
+from typing import Optional
 
 class Classification(BaseModel):
     category: str
@@ -8,20 +9,20 @@ class Classification(BaseModel):
     confidence: float
 
 class AnalysisResult(BaseModel):
-    summary: str
-    classification: Classification
+    summary: Optional[str] = None
+    classification: Optional[Classification] = None
     root_cause: str
     recommended_actions: list[str]
-    evidence: list[str]
+    evidence: Optional[list[str]] = None
     escalation_required: bool
-    external_actions: list[str]
+    external_actions_taken: list[str]
 
 class CopilotRequest(BaseModel):
     message: str
 
 class CopilotResponse(BaseModel):
     response: str
-    evidence_used: list[str]
+    evidence_used: Optional[list[str]] = None
 
 class SimilarIncident(BaseModel):
     incident_id: str

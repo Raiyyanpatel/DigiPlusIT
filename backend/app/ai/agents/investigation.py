@@ -13,7 +13,7 @@ async def investigation_agent(state: IncidentState) -> IncidentState:
     
     llm = ChatGoogleGenerativeAI(
         api_key=settings.GEMINI_API_KEY, 
-        model="gemini-1.5-flash",
+        model="gemini-flash-lite-latest",
         temperature=0
     ).bind(
         response_format={"type": "json_object"}
@@ -43,7 +43,10 @@ async def investigation_agent(state: IncidentState) -> IncidentState:
     
     try:
         response = await llm.ainvoke([sys_msg, human_msg])
-        result = json.loads(response.content)
+        content = response.content
+        if isinstance(content, list):
+            content = content[0].get("text", "")
+        result = json.loads(content)
         
         return {
             **state,

@@ -46,7 +46,7 @@ async def analyze_incident(
         
     # Format to schema
     analysis = AnalysisResult(
-        incident_id=incident_id,
+        summary=result.get("summary", ""),
         root_cause=result.get("root_cause", ""),
         recommended_actions=result.get("recommended_actions", []),
         escalation_required=result.get("escalation_required", False),
@@ -82,15 +82,23 @@ async def copilot_chat(
         
     llm = ChatGoogleGenerativeAI(
         api_key=settings.GEMINI_API_KEY, 
-        model="gemini-1.5-flash"
+        model="gemini-flash-lite-latest"
     )
     
-    sys_msg = SystemMessage(content=f"You are the ResolveAI Copilot. Help the engineer resolve this incident: {incident.title}. Description: {incident.description}.")
+    sys_msg = SystemMessage(content=f"You are the ResolveAI Copilot. Help the engineer resolve this incident: {incident.title}. Description: {incident.description}.\n\nIMPORTANT: Do NOT use markdown formatting (such as *, #, or `). Output clean, readable plain text only, separated by newlines.")
     human_msg = HumanMessage(content=request.message)
+    messages = [sys_msg, human_msg]
     
     try:
-        response = await llm.ainvoke([sys_msg, human_msg])
-        return CopilotResponse(response=response.content)
+        response = await llm.ainvoke(messages)
+        content = response.content
+        if isinstance(content, list):
+            content = content[0].get("text", "")
+            
+        return CopilotResponse(
+            response=content,
+            evidence_used=[]
+        )
     except Exception as e:
         return CopilotResponse(response=f"Error communicating with AI: {e}")
 

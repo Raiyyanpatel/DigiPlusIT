@@ -5,7 +5,7 @@ import axios from 'axios';
 import { cn } from './lib/utils';
 
 const api = axios.create({
-  baseURL: 'http://localhost:8000',
+  baseURL: 'http://localhost:8000/api/v1/',
   headers: {
     'Authorization': 'Bearer placeholder-token'
   }
@@ -15,6 +15,7 @@ export function CreateIncident() {
   const navigate = useNavigate();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [priority, setPriority] = useState('UNASSIGNED');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -24,10 +25,10 @@ export function CreateIncident() {
     setError('');
     
     try {
-      const res = await api.post('/incidents/', {
+      const res = await api.post('incidents', {
         title,
         description,
-        priority: 'UNASSIGNED',
+        priority: priority,
         category: 'General'
       });
       // Redirect to the new incident detail page
@@ -73,6 +74,20 @@ export function CreateIncident() {
                 placeholder="e.g. Cannot access staging database"
                 className="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold mb-2">Priority</label>
+              <select
+                value={priority}
+                onChange={(e) => setPriority(e.target.value)}
+                className="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
+              >
+                <option value="UNASSIGNED">Auto-assign (AI Triage)</option>
+                <option value="P1">P1 - Critical / Outage</option>
+                <option value="P2">P2 - High Impact</option>
+                <option value="P3">P3 - Low Impact / General</option>
+              </select>
             </div>
 
             <div>
