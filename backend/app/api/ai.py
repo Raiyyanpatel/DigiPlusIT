@@ -54,9 +54,16 @@ async def analyze_incident(
     )
     
     # Save to incident
-    incident_update = incident_service.IncidentUpdate(
-        ai_analysis=analysis.model_dump()
-    )
+    priority_val = result.get("priority")
+    category_val = result.get("category")
+    
+    update_data = {"ai_analysis": analysis.model_dump()}
+    if priority_val:
+        update_data["priority"] = priority_val
+    if category_val:
+        update_data["category"] = category_val
+        
+    incident_update = incident_service.IncidentUpdate(**update_data)
     await incident_service.update_incident(db, incident_id, incident_update, current_user.id)
     
     # Set Cache

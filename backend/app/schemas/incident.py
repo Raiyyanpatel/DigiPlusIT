@@ -20,6 +20,7 @@ class IncidentUpdate(BaseModel):
     category: str | None = None
     subcategory: str | None = None
     team: str | None = None
+    ai_analysis: dict[str, Any] | None = None
 
 class IncidentResponse(BaseModel):
     id: str

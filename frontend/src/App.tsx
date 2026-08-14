@@ -158,9 +158,11 @@ function IncidentDetail() {
   const runAnalysis = async () => {
     setAnalyzing(true);
     try {
-      await new Promise(r => setTimeout(r, 1500));
       const response = await api.post(`ai/${id}/analyze`);
       setAnalysis(response.data);
+      // Refetch incident to get the updated priority/category
+      const incResponse = await api.get(`incidents/${id}`);
+      setIncident(incResponse.data);
     } catch (err) {
       console.error(err);
       setAnalysis({
